@@ -1,0 +1,19 @@
+package com.example.weatherappjetpackconpose.model.pojo
+
+import Forecast
+import kotlinx.coroutines.flow.Flow
+
+interface RepoWeatherInterface {
+suspend fun getWeatherCurrent(
+    lat:Double?,
+    long: Double?,
+    language: String,
+    units: String?
+): Flow<CurrentForcast>
+suspend fun getWeatherForecast(
+    lat:Double?,
+    long: Double?,
+    language: String,
+    units: String?
+):Flow<Forecast>
+}
