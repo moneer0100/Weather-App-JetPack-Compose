@@ -16,4 +16,8 @@ suspend fun getWeatherForecast(
     language: String,
     units: String?
 ):Flow<Forecast>
+//fav
+fun getAllFav():Flow<List<FavouriteWeather>>
+suspend fun insertToDataBase(favouriteWeather: FavouriteWeather)
+suspend fun deleteFromDataBase(favouriteWeather: FavouriteWeather)
 }

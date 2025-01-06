@@ -1,5 +1,8 @@
 package com.example.weatherappjetpackconpose.model.pojo
 
+import com.example.weatherappjetpackconpose.model.dp.Dao
+import com.example.weatherappjetpackconpose.model.dp.LocalWeatherImp
+import com.example.weatherappjetpackconpose.model.dp.LocalWeatherInterface
 import com.example.weatherappjetpackconpose.model.netWork.ApiService
 import com.example.weatherappjetpackconpose.model.netWork.WeatherRemoteImp
 import com.example.weatherappjetpackconpose.model.netWork.WeatherRemteInterface
@@ -14,7 +17,12 @@ import javax.inject.Singleton
 object RepoModule {
     @Singleton
     @Provides
-    fun provideMovieRemoteImp(apiService: ApiService): WeatherRemteInterface {
+    fun provideWeatherRemoteImp(apiService: ApiService): WeatherRemteInterface {
         return WeatherRemoteImp(apiService)
+    }
+    @Singleton
+    @Provides
+    fun provideWeatherLocalImp(dao: Dao):LocalWeatherInterface{
+return LocalWeatherImp(dao)
     }
 }

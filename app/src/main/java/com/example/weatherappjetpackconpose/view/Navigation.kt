@@ -41,10 +41,10 @@ fun WeatherNavigation(viewModel: HomeViewModel, locationState: Pair<Double, Doub
             BottomNavigationBar(
                 navController = navController,
                 items = listOf(
-                    BottomNavItem("Home", Icons.Filled.Home),
-                    BottomNavItem("Favorites", Icons.Filled.Favorite),
-                    BottomNavItem("Alerts", Icons.Filled.Notifications),
-                    BottomNavItem("Settings", Icons.Filled.Settings)
+                    BottomNavItem(label = "Home", icon = Icons.Filled.Home, route = "home"),
+                    BottomNavItem(label = "Favorites", icon = Icons.Filled.Favorite, route = "favorites"),
+                    BottomNavItem(label = "Alerts", icon = Icons.Filled.Notifications, route = "alerts"),
+                    BottomNavItem(label = "Settings", icon = Icons.Filled.Settings, route = "settings")
                 )
             )
         }
@@ -67,13 +67,23 @@ fun WeatherNavigation(viewModel: HomeViewModel, locationState: Pair<Double, Doub
                     Home(viewModel = viewModel, locationState = locationState)
                 }
                 composable("favorites") {
-                    FavoritesScreen()
+                    FavoritesScreen(navController,viewModel)  // Make sure this screen exists
                 }
                 composable("alerts") {
                     AlertsScreen()
                 }
                 composable("settings") {
                     SettingsScreen()
+                }
+                composable("map") {
+                    GoogleMapScreen(
+                        viewModel = viewModel,
+                        navController = navController,
+                        onLocationSelected = { latLng ->
+                            navController.previousBackStackEntry?.savedStateHandle?.set("location", latLng)
+                            navController.popBackStack() // Return to the previous screen
+                        }
+                    )
                 }
             }
         }
@@ -99,7 +109,11 @@ fun BottomNavigationBar(
                 selected = currentDestination == item.route,
                 onClick = {
                     if (currentDestination != item.route) {
-                        navController.navigate(item.route)
+                        navController.navigate(item.route) {
+                            // Avoid multiple copies of the same route on the back stack
+                            launchSingleTop = true
+                            restoreState = true
+                        }
                     }
                 }
             )
@@ -107,10 +121,8 @@ fun BottomNavigationBar(
     }
 }
 
-data class BottomNavItem(val label: String, val icon: ImageVector, val route: String = label.lowercase())
-
-
-
-
-
-
+data class BottomNavItem(
+    val label: String,
+    val icon: ImageVector,
+    val route: String
+)

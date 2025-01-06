@@ -97,4 +97,12 @@ dependencies {
     //location
     implementation("com.google.android.gms:play-services-location:21.1.0")
     implementation("com.google.accompanist:accompanist-permissions:0.35.0-alpha")
+    //map
+    implementation ("com.google.android.gms:play-services-maps:18.1.0")
+    implementation ("com.google.maps.android:maps-compose:2.11.4")
+    //room
+    implementation("androidx.room:room-runtime:2.6.1")
+    implementation("androidx.room:room-ktx:2.6.1")
+    kapt("androidx.room:room-compiler:2.6.1")
+
 }

@@ -1,6 +1,7 @@
 package com.example.weatherappjetpackconpose.view
 
 import Forecast
+import android.annotation.SuppressLint
 import android.os.Build
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.Image
@@ -32,6 +33,7 @@ import com.example.weatherappjetpackconpose.model.pojo.CurrentForcast
 
 import com.example.weatherappjetpackconpose.viewModel.HomeViewModel
 
+@SuppressLint("SuspiciousIndentation")
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun Home(viewModel: HomeViewModel = viewModel(), locationState: Pair<Double, Double>) {
