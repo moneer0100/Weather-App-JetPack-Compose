@@ -1,6 +1,8 @@
 package com.example.weatherappjetpackconpose.view
 
 import Forecast
+import android.os.Build
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.horizontalScroll
@@ -30,46 +32,12 @@ import com.example.weatherappjetpackconpose.model.pojo.CurrentForcast
 
 import com.example.weatherappjetpackconpose.viewModel.HomeViewModel
 
+@RequiresApi(Build.VERSION_CODES.O)
 @Composable
-fun Home(viewModel: HomeViewModel = viewModel()) {
+fun Home(viewModel: HomeViewModel = viewModel(), locationState: Pair<Double, Double>) {
     val currentForecast by viewModel.currentState.collectAsState()
     val forecastWeather by viewModel.forecastState.collectAsState()
 
-    LaunchedEffect(Unit) {
-        viewModel.getCurrentForecast(lat = 0.0, long = 0.0, language = "", unites = "")
-        viewModel.getForecastWeather(lat = 0.0, long = 0.0, language = "", unites = "")
-    }
-
-    var selectedItem by remember { mutableStateOf(0) }
-    val items = listOf("Home", "Favorites", "Alerts", "Settings")
-    val icons = listOf(
-        Icons.Filled.Home,
-        Icons.Filled.Favorite,
-        Icons.Filled.Notifications,
-        Icons.Filled.Settings
-    )
-
-    Scaffold(
-        bottomBar = {
-            BottomNavigationBar(
-                items = items,
-                icons = icons,
-                selectedItem = selectedItem,
-                onItemSelected = { selectedItem = it }
-            )
-        }
-    ) { innerPadding ->
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(
-                    Brush.verticalGradient(
-                        colors = listOf(Color(0xFF90CAF9), Color(0xFFBBDEFB))
-                    )
-                )
-                .padding(innerPadding)
-        ) {
-            // LazyColumn to display weather content
             LazyColumn() {
                 item {
                     when (currentForecast) {
@@ -78,7 +46,9 @@ fun Home(viewModel: HomeViewModel = viewModel()) {
                         }
                         is ResponseState.Success -> {
                             val weatherData = (currentForecast as ResponseState.Success<CurrentForcast>).data
-                            WeatherContent(weatherData)
+                            WeatherContent(weatherData,
+                                lat = locationState.first,
+                                long = locationState.second)
                         }
                         is ResponseState.Error -> {
                             Text("Error loading current weather data", color = Color.Red, textAlign = TextAlign.Center)
@@ -94,7 +64,9 @@ fun Home(viewModel: HomeViewModel = viewModel()) {
                         }
                         is ResponseState.Success -> {
                             val forecast = (forecastWeather as ResponseState.Success<Forecast>).data
-                            ForecastWeather(forecast)
+                            ForecastWeather(forecast,
+                                lat=locationState.first,
+                                lon=locationState.second)
                         }
                         is ResponseState.Error -> {
                             Text("Error loading forecast data", color = Color.Red, textAlign = TextAlign.Center)
@@ -103,30 +75,10 @@ fun Home(viewModel: HomeViewModel = viewModel()) {
                 }
             }
         }
-    }
-}
 
-@Composable
-fun BottomNavigationBar(
-    items: List<String>,
-    icons: List<ImageVector>,
-    selectedItem: Int,
-    onItemSelected: (Int) -> Unit
-) {
-    NavigationBar(
-        containerColor = Color(0xFF0288D1),
-        contentColor = Color.White
-    ) {
-        items.forEachIndexed { index, item ->
-            NavigationBarItem(
-                icon = { Icon(imageVector = icons[index], contentDescription = item) },
-                label = { Text(text = item) },
-                selected = selectedItem == index,
-                onClick = { onItemSelected(index) }
-            )
-        }
-    }
-}
+
+
+
 
 @Composable
 fun LoadingState() {

@@ -34,5 +34,9 @@ fun getCurrentForecast(lat:Double,long:Double,language: String,unites:String){
                 ?.collect{data->_forecastState.value=ResponseState.Success(data)}
         }
     }
+    fun updateLocation(latitude: Double, longitude: Double,language: String,unites: String) {
+        getCurrentForecast(latitude, longitude,language,unites)
+        getForecastWeather(latitude, longitude,language,unites)
+    }
 
 }

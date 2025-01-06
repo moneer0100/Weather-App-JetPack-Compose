@@ -28,10 +28,11 @@ import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import java.time.format.TextStyle
 import java.util.Locale
+import kotlin.math.roundToInt
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
-fun ForecastWeather(forecast: Forecast) {
+fun ForecastWeather(forecast: Forecast,lat:Double,lon: Double) {
     Text(
         text = "Today's Forecast (Every 3 Hours)",
         style = MaterialTheme.typography.titleMedium,
@@ -53,7 +54,7 @@ fun ForecastWeather(forecast: Forecast) {
         }.forEach { hourlyForecast ->
             val iconCode = hourlyForecast.weather.firstOrNull()?.icon ?: ""
             val iconUrl = "https://openweathermap.org/img/wn/${iconCode}@2x.png"
-            val tempInCelsius = kelvinToCelsius(hourlyForecast.main.temp.toFloat())
+            val tempInCelsius = hourlyForecast.main.temp.roundToInt()
 
 
             val timeFormatter = DateTimeFormatter.ofPattern("hh:mm a")
@@ -106,8 +107,8 @@ fun ForecastWeather(forecast: Forecast) {
 
         groupedForecast.entries.take(5).forEach { (date, dailyForecasts) ->
             val dayOfWeek = date.dayOfWeek.name // Get the name of the week
-            val tempMaxInCelsius = dailyForecasts.maxOf { kelvinToCelsius(it.main.tempMax.toFloat()) }
-            val tempMinInCelsius = dailyForecasts.minOf { kelvinToCelsius(it.main.tempMin.toFloat()) }
+            val tempMaxInCelsius = dailyForecasts.maxOf {it.main.tempMax.roundToInt() }
+            val tempMinInCelsius = dailyForecasts.minOf { it.main.tempMin.roundToInt() }
             val iconCode = dailyForecasts.firstOrNull()?.weather?.firstOrNull()?.icon ?: ""
             val iconUrl = "https://openweathermap.org/img/wn/${iconCode}@2x.png"
 
