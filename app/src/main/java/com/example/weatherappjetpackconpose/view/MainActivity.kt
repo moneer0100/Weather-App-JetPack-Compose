@@ -18,6 +18,7 @@ import android.os.Looper
 import android.util.AttributeSet
 import android.util.Log
 import android.view.View
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -78,9 +79,16 @@ class MainActivity : ComponentActivity() {
 
             val viewModel: HomeViewModel = hiltViewModel()
             val locationState = remember { mutableStateOf(Pair(0.0, 0.0)) }
+            val addressState = remember { mutableStateOf("قيد التحميل...") }
+
+            LaunchedEffect(locationState.value) {
+                getAddressFromLatLongAsync(this@MainActivity, latitude, longitude) { address ->
+                    addressState.value = address
+                }
+            }
 
 //            Home(viewModel, locationState = locationState.value)
-            WeatherNavigation(viewModel,locationState=locationState.value)
+            WeatherNavigation(viewModel,locationState=locationState.value, address = addressState.value)
             LaunchedEffect(Unit) {
                 checkLocationSettings(viewModel, locationState)
             }
@@ -135,9 +143,7 @@ class MainActivity : ComponentActivity() {
                         latitude = location.latitude
                         longitude = location.longitude
                         locationState.value = Pair(latitude, longitude)
-                        getAddressFromLatLong(this@MainActivity, latitude, longitude)
 
-                        // تحديث الموقع في الـ ViewModel
                         viewModel.updateLocation(latitude, longitude, "en", "metric")
                     }
                 }
@@ -161,28 +167,33 @@ class MainActivity : ComponentActivity() {
         )
     }
 
+    private fun getAddressFromLatLongAsync(
+        context: Context, latitude: Double, longitude: Double, callback: (String) -> Unit
+    ) {
+        val geocoder = Geocoder(context, Locale.getDefault())
+        try {
 
-    // Function to get the address in the background using coroutines
-    private  fun getAddressFromLatLong(context: Context, latitude: Double, longitude: Double): String {
-        return try {
-          // Run in background thread
-                val geocoder = Geocoder(context, Locale.getDefault())
+            Thread {
                 val addressList = geocoder.getFromLocation(latitude, longitude, 1)
-                if (addressList?.isNotEmpty() == true) {
-                    val address = addressList?.get(0)
-                    "${address?.getAddressLine(0)}, ${address?.locality}, ${address?.adminArea}"
+                val address = if (addressList?.isNotEmpty() == true) {
+                    val addr = addressList[0]
+
+                    val country = addr.countryName ?: "Unknown Country"
+                    val adminArea = addr.adminArea ?: "Unknown Area"
+                    "$adminArea, $country"
                 } else {
                     "Address not found"
                 }
-
-        } catch (e: TimeoutException) {
-            Log.e("GeocoderError", "Timeout occurred while fetching address: ${e.message}")
-            "Address fetch timed out"
+                // Return the result to the callback
+                callback(address)
+            }.start()
         } catch (e: Exception) {
             Log.e("GeocoderError", "Error fetching address: ${e.message}")
-            "Unable to get address"
+            callback("Unable to get address")
         }
     }
+
+
     fun createNotificationChannel(context: Context) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val channel = NotificationChannel(

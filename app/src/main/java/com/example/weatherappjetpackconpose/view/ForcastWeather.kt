@@ -1,8 +1,8 @@
 package com.example.weatherappjetpackconpose.view
 
 import Forecast
+import android.annotation.SuppressLint
 import android.os.Build
-import android.util.Log
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.horizontalScroll
@@ -27,10 +27,9 @@ import com.example.weatherappjetpackconpose.viewModel.HomeViewModel
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
-import java.time.format.TextStyle
-import java.util.Locale
 import kotlin.math.roundToInt
 
+@SuppressLint("StateFlowValueCalledInComposition")
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun ForecastWeather(forecast: Forecast,lat:Double,lon: Double,viewModel: HomeViewModel) {

@@ -2,14 +2,11 @@ package com.example.weatherappjetpackconpose.view
 
 import android.app.Activity
 import android.content.Context
-import android.content.res.Configuration
-import android.os.Handler
-import android.os.Looper
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material3.Card
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.RadioButtonDefaults
@@ -22,16 +19,15 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.example.weatherappjetpackconpose.R
+import com.example.weatherappjetpackconpose.model.pojo.CurrentForcast
 import com.example.weatherappjetpackconpose.viewModel.HomeViewModel
 import java.util.*
 
 @Composable
 fun SettingsScreen(temperatureViewModel: HomeViewModel) {
-
     val context = LocalContext.current
-    var selectedLanguage by remember {
-        mutableStateOf(getSavedLanguage(context)) // استرجاع اللغة المحفوظة
-    }
+    val savedLanguage = remember { mutableStateOf(getSavedPreference(context, "selected_language", "English")) }
+    val savedTemp = remember { mutableStateOf(getSavedPreference(context, "selected_temp", "Celsius")) }
 
     Box(
         modifier = Modifier
@@ -41,40 +37,28 @@ fun SettingsScreen(temperatureViewModel: HomeViewModel) {
     ) {
         Column(
             modifier = Modifier
-                .verticalScroll(rememberScrollState()) // Adding scroll functionality
+                .verticalScroll(rememberScrollState())
         ) {
-            // Card 1 (Language)
             SettingsCard(
                 cardTitle = stringResource(id = R.string.language),
                 options = listOf("English", "Arabic"),
-                cardNumber = 1,
-                defaultSelectedOption = selectedLanguage,
+                defaultSelectedOption = savedLanguage.value,
                 onOptionSelected = { option ->
-                    selectedLanguage = option
-                    ChangeLocale(option, context) // Change locale when language is selected
+                    savedLanguage.value = option
+                    savePreference(context, "selected_language", option)
+                    changeLocale(option, context)
                 }
             )
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Card 2 (Location)
-            SettingsCard(
-                cardTitle = stringResource(id = R.string.location),
-                options = listOf("Gps", "Map"),
-                cardNumber = 2,
-                defaultSelectedOption = "Gps",
-                onOptionSelected = { option -> }
-            )
-
-            Spacer(modifier = Modifier.height(16.dp)) // Space between cards
-
-            // Card 3 (Temperature)
             SettingsCard(
                 cardTitle = stringResource(id = R.string.temperature),
                 options = listOf("Celsius", "Fahrenheit", "Kelvin"),
-                cardNumber = 3,
-                defaultSelectedOption = "Celsius",
+                defaultSelectedOption = savedTemp.value,
                 onOptionSelected = { option ->
+                    savedTemp.value = option
+                    savePreference(context, "selected_temp", option)
                     temperatureViewModel.setTemperatureScale(option)
                 }
             )
@@ -82,21 +66,13 @@ fun SettingsScreen(temperatureViewModel: HomeViewModel) {
     }
 }
 
-// دالة لاسترجاع اللغة المحفوظة من SharedPreferences
-fun getSavedLanguage(context: Context): String {
-    val sharedPref = context.getSharedPreferences("app_preferences", Context.MODE_PRIVATE)
-    return sharedPref.getString("selected_language", "English") ?: "English"
-}
-
 @Composable
 fun SettingsCard(
     cardTitle: String,
     options: List<String>,
-    cardNumber: Int,
-    defaultSelectedOption: String, // Default option passed as a parameter
+    defaultSelectedOption: String,
     onOptionSelected: (String) -> Unit
 ) {
-    // Set the default selected option
     val selectedOption = remember { mutableStateOf(defaultSelectedOption) }
 
     Card(
@@ -111,8 +87,6 @@ fun SettingsCard(
                 .selectableGroup()
         ) {
             Text(text = cardTitle, modifier = Modifier.padding(bottom = 8.dp))
-
-            // Create RadioButtons dynamically from the options list
             options.forEach { option ->
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
@@ -122,7 +96,7 @@ fun SettingsCard(
                         selected = selectedOption.value == option,
                         onClick = {
                             selectedOption.value = option
-                            onOptionSelected(option) // Update the selected option
+                            onOptionSelected(option)
                         },
                         colors = RadioButtonDefaults.colors(selectedColor = Color.Blue)
                     )
@@ -131,35 +105,29 @@ fun SettingsCard(
             }
         }
     }
-
 }
-fun ChangeLocale(languageCode: String, context: Context) {
-    val sharedPref = context.getSharedPreferences("app_preferences", Context.MODE_PRIVATE)
-    val editor = sharedPref.edit()
-    editor.putString("selected_language", languageCode)
-    editor.apply()
 
-    val configuration = context.resources.configuration
+fun getSavedPreference(context: Context, key: String, defaultValue: String): String {
+    val sharedPref = context.getSharedPreferences("app_preferences", Context.MODE_PRIVATE)
+    return sharedPref.getString(key, defaultValue) ?: defaultValue
+}
+
+fun savePreference(context: Context, key: String, value: String) {
+    val sharedPref = context.getSharedPreferences("app_preferences", Context.MODE_PRIVATE)
+    sharedPref.edit().putString(key, value).apply()
+}
+
+fun changeLocale(languageCode: String, context: Context) {
     val locale = when (languageCode) {
-        "Arabic" -> Locale("ar") // كود اللغة العربية
-        "English" -> Locale("en") // كود اللغة الإنجليزية
+        "Arabic" -> Locale("ar")
+        "English" -> Locale("en")
         else -> Locale.getDefault()
     }
 
     Locale.setDefault(locale)
+    val config = context.resources.configuration
+    config.setLocale(locale)
+    context.resources.updateConfiguration(config, context.resources.displayMetrics)
 
-    // تعيين اللغة الجديدة على التكوين
-    configuration.setLocale(locale)
-
-    // تحديث التكوين في الموارد النظامية
-    context.resources.updateConfiguration(configuration, context.resources.displayMetrics)
-
-    // إعلام النظام بتغيير التكوين، بدون الحاجة لإعادة إنشاء النشاط
-    val activity = context as? Activity
-    activity?.window?.decorView?.requestLayout()
+    (context as? Activity)?.window?.decorView?.requestLayout()
 }
-
-
-
-
-

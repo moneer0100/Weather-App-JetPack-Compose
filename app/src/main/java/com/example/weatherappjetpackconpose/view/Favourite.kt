@@ -25,14 +25,17 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.navigation.NavHostController
 import com.example.weatherappjetpackconpose.model.netWork.ResponseState
+import com.example.weatherappjetpackconpose.model.pojo.CurrentForcast
 import com.example.weatherappjetpackconpose.model.pojo.FavouriteWeather
 import com.example.weatherappjetpackconpose.viewModel.HomeViewModel
 
 @Composable
 fun FavoritesScreen(navController: NavHostController, viewModel: HomeViewModel) {
    val favoriteWeatherState  by viewModel.favState.collectAsState()
+    val currentForcast by viewModel.currentState.collectAsState()
  LaunchedEffect(true) {
      viewModel.getAllFav()
+
 
  }
     when (favoriteWeatherState) {
@@ -46,6 +49,7 @@ fun FavoritesScreen(navController: NavHostController, viewModel: HomeViewModel) 
         }
         is ResponseState.Success -> {
             val favoriteLocations = (favoriteWeatherState as ResponseState.Success).data
+            val currentForcast2=(currentForcast as ResponseState.Success).data
             Box(
                 modifier = Modifier
                     .fillMaxSize()
@@ -56,6 +60,7 @@ fun FavoritesScreen(navController: NavHostController, viewModel: HomeViewModel) 
 
                     favoriteLocations.forEach { location ->
                         FavoriteCard(
+                            currentForcast2 = currentForcast2,
                             favoriteWeather = location,
                             onClick = {
                                 navController.navigate("home/${location.lat}/${location.lon}")
@@ -65,6 +70,7 @@ fun FavoritesScreen(navController: NavHostController, viewModel: HomeViewModel) 
                                 viewModel.deleteFromDataBase(location)
                                 Toast.makeText(navController.context, "Deleted ${location.address}", Toast.LENGTH_SHORT).show()
                             }
+
                         )
                     }
 
@@ -80,11 +86,12 @@ fun FavoritesScreen(navController: NavHostController, viewModel: HomeViewModel) 
 }
 
 @Composable
-fun FavoriteCard(favoriteWeather: FavouriteWeather,onClick:()->Unit, onDelete: () -> Unit) {
+fun FavoriteCard(favoriteWeather: FavouriteWeather,onClick:()->Unit, onDelete: () -> Unit,currentForcast2:CurrentForcast) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 8.dp).clickable { onClick() },
+            .padding(vertical = 8.dp)
+            .clickable { onClick() },
         shape = RoundedCornerShape(8.dp)
     ) {
         Row(
@@ -101,7 +108,7 @@ fun FavoriteCard(favoriteWeather: FavouriteWeather,onClick:()->Unit, onDelete: (
                     overflow = TextOverflow.Ellipsis
                 )
                 Text(
-                    text =" ${favoriteWeather.lat},${favoriteWeather.lon}",
+                    text =currentForcast2.weather[0].description,
                     style = androidx.compose.material3.MaterialTheme.typography.bodyMedium,
                     color = Color.Gray
                 )

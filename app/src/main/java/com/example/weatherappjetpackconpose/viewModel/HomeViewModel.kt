@@ -1,10 +1,8 @@
 package com.example.weatherappjetpackconpose.viewModel
 
 import Forecast
-import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.weatherappjetpackconpose.model.netWork.ResponseState
 import com.example.weatherappjetpackconpose.model.pojo.Alert
 import com.example.weatherappjetpackconpose.model.pojo.CurrentForcast
@@ -13,11 +11,13 @@ import com.example.weatherappjetpackconpose.model.pojo.RepoWeatherImp
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharedFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.launch
-import org.intellij.lang.annotations.Language
 import javax.inject.Inject
+
 @HiltViewModel
 class HomeViewModel @Inject constructor(private val repoWeatherImp: RepoWeatherImp):ViewModel() {
     private val _curentState= MutableStateFlow<ResponseState<CurrentForcast>>(ResponseState.Loading)
@@ -26,7 +26,9 @@ fun getCurrentForecast(lat:Double,long:Double,language: String,unites:String){
     viewModelScope.launch(Dispatchers.IO){
         repoWeatherImp.getWeatherCurrent(lat,long,language,unites)
             ?.catch { error->_curentState.value =ResponseState.Error(error) }
-            ?.collect{data->_curentState.value=ResponseState.Success(data)}
+            ?.collect{data->_curentState.value=ResponseState.Success(data)
+            }
+
     }
 }
     private val _forecastState= MutableStateFlow<ResponseState<Forecast>>(ResponseState.Loading)
@@ -35,7 +37,7 @@ fun getCurrentForecast(lat:Double,long:Double,language: String,unites:String){
         viewModelScope.launch(Dispatchers.IO){
             repoWeatherImp.getWeatherForecast(lat,long,language,unites)
                 ?.catch { error->_forecastState.value=ResponseState.Error(error) }
-                ?.collect{data->_forecastState.value=ResponseState.Success(data)}
+                ?.collect{data->_forecastState.value=ResponseState.Success(data) }
         }
     }
     fun updateLocation(latitude: Double, longitude: Double,language: String,unites: String) {
@@ -85,20 +87,27 @@ fun getCurrentForecast(lat:Double,long:Double,language: String,unites:String){
             repoWeatherImp.deleteAlert(alert)
         }
     }
-    var selectedTemperatureScale = mutableStateOf("Celsius")
-
-    // Function to convert the temperature based on the selected scale
-    fun convertTemperature(temp: Double): Double {
-        return when (selectedTemperatureScale.value) {
-            "C" -> temp // already in Celsius
-            "F" -> (temp * 9/5) + 32 // Celsius to Fahrenheit
-            "K" -> temp + 273.15 // Celsius to Kelvin
-            else -> temp
-        }
-    }
+    private val _selectedTemperatureScale = MutableStateFlow("C")
+    val selectedTemperatureScale: StateFlow<String> = _selectedTemperatureScale
 
 
     fun setTemperatureScale(scale: String) {
-        selectedTemperatureScale.value = scale
+        _selectedTemperatureScale.value = scale
     }
+
+
+    private val _convertedTemperature = MutableStateFlow("0")
+    val convertedTemperature: StateFlow<String> = _convertedTemperature
+
+    fun convertTemperature(temp: Double): String {
+        return when (_convertedTemperature.value) {
+
+            "F" -> ((temp * 9 / 5) + 32).toString()
+            "K" -> (temp + 273.15).toString()
+            else -> temp.toString()
+        }
+    }
+
 }
+
+

@@ -8,6 +8,7 @@ import android.app.TimePickerDialog
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.location.Geocoder
 import android.os.SystemClock
 import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -24,6 +25,7 @@ import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import androidx.navigation.NavHostController
 import com.example.weatherappjetpackconpose.model.pojo.Alert
+import com.example.weatherappjetpackconpose.model.pojo.FavouriteWeather
 import com.example.weatherappjetpackconpose.viewModel.HomeViewModel
 import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
@@ -35,7 +37,8 @@ fun GoogleMapScreen(
     navController: NavHostController,
     viewModel: HomeViewModel,
     onLocationSelected: (LatLng) -> Unit,
-    sourceScreen: String
+    sourceScreen: String,
+
 ) {
     var alarmCalendar by remember { mutableStateOf<Calendar?>(null) }
     var selectedDate by remember { mutableStateOf(Calendar.getInstance()) }
@@ -69,9 +72,44 @@ fun GoogleMapScreen(
         bottomBar = {
             Button(
                 onClick = {
-                    selectedLocation?.let {
-                        // Trigger the location selection dialog
-                        showDialog = true
+                    selectedLocation?.let {location->
+                        val address = getAddressFromLatLng(context, location)
+                        if (sourceScreen == "alertsScreen") {
+                            showDialog = true
+
+                        } else if (sourceScreen == "favScreen") {
+
+
+                            address?.let {
+                                FavouriteWeather(
+                                    id=0,
+                                    address = it,
+                                    lat = selectedLocation!!.latitude,
+                                    lon = selectedLocation!!.longitude
+
+
+                                )
+                            }?.let { viewModel.insertToDataBase(weather = it) }
+                            address.let {
+                                Alert( id=0
+                                    ,  lat = selectedLocation!!.latitude,
+                                    lon = selectedLocation!!.longitude,
+                                    Kind = "Alarm",
+                                    start =  0.0,
+                                    end = 0.0)
+                            }?.let {   viewModel.insertAlert(alert = it) }
+
+                            onLocationSelected(location)
+
+                            navController.navigate("favorites") // Navigate to favorites after adding location
+                        } else {
+
+                            onLocationSelected(location)
+                            when (sourceScreen) {
+                                "AlertScreen" -> navController.navigate("alerts")
+                                else -> navController.popBackStack()
+                            }
+                        }
                     }
                 },
                 enabled = selectedLocation != null
@@ -92,7 +130,9 @@ fun GoogleMapScreen(
             cameraPositionState = cameraPositionState,
             uiSettings = MapUiSettings(zoomControlsEnabled = true),
             properties = MapProperties(isMyLocationEnabled = hasLocationPermission),
-            onMapClick = { latLng -> selectedLocation = latLng }
+            onMapClick = { latLng -> selectedLocation = latLng
+
+              }
         ) {
             selectedLocation?.let {
                 Marker(
@@ -102,7 +142,7 @@ fun GoogleMapScreen(
             }
         }
 
-        // Show an alert dialog when a location is selected
+
         if (showDialog) {
             AlertDialog(
                 onDismissRequest = { showDialog = false },
@@ -111,11 +151,7 @@ fun GoogleMapScreen(
                         onClick = {
                             selectedLocation?.let {
                                 onLocationSelected(it)
-                                when (sourceScreen) {
-                                    "favScreen" -> navController.navigate("favorites")
-                                    "alertsScreen" -> navController.navigate("alerts")
-                                    else -> navController.popBackStack()
-                                }
+                                navController.navigate("alerts")
 
                                 // Show DatePickerDialog when the user confirms the location
                                 showTimePicker = true
@@ -143,7 +179,7 @@ fun GoogleMapScreen(
                     selectedDate = Calendar.getInstance().apply {
                         set(year, month, dayOfMonth)
                     }
-                    // Once the date is selected, show TimePicker
+
                     TimePickerDialog(
                         context,
                         { _, hourOfDay, minute ->
@@ -186,6 +222,7 @@ fun GoogleMapScreen(
     }
 }
 
+
 @SuppressLint("ScheduleExactAlarm")
 fun setAlarm(context: Context, location: LatLng?, alarmCalendar: Calendar) {
     val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
@@ -208,3 +245,14 @@ fun setAlarm(context: Context, location: LatLng?, alarmCalendar: Calendar) {
     alarmManager.setExact(AlarmManager.RTC_WAKEUP, alarmCalendar.timeInMillis, pendingIntent)
     Log.d("Alarm", "Alarm set for: ${alarmCalendar.timeInMillis}")
 }
+fun getAddressFromLatLng(context: Context, latLng: LatLng): String? {
+    val geocoder = Geocoder(context, Locale.getDefault())
+    return try {
+        val addresses = geocoder.getFromLocation(latLng.latitude, latLng.longitude, 1)
+        addresses?.firstOrNull()?.getAddressLine(0) // استخدام أول عنوان تم العثور عليه
+    } catch (e: Exception) {
+        e.printStackTrace()
+        null
+    }
+}
+

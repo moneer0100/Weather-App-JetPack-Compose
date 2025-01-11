@@ -35,7 +35,7 @@ import com.example.weatherappjetpackconpose.viewModel.HomeViewModel
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
-fun WeatherNavigation(viewModel: HomeViewModel, locationState: Pair<Double, Double>) {
+fun WeatherNavigation(viewModel: HomeViewModel, locationState: Pair<Double, Double>,address:String) {
     val navController = rememberNavController()
 
     Scaffold(
@@ -66,7 +66,7 @@ fun WeatherNavigation(viewModel: HomeViewModel, locationState: Pair<Double, Doub
                 startDestination = "home"
             ) {
                 composable("home") {
-                    Home(viewModel = viewModel, locationState = locationState)
+                    Home(viewModel = viewModel, locationState = locationState,address)
                 }
                 composable(
                     route = "home/{lat}/{lon}",
@@ -77,7 +77,7 @@ fun WeatherNavigation(viewModel: HomeViewModel, locationState: Pair<Double, Doub
                 ) { backStackEntry ->
                     val lat = backStackEntry.arguments?.getString("lat")?.toDoubleOrNull() ?: 0.0
                     val lon = backStackEntry.arguments?.getString("lon")?.toDoubleOrNull() ?: 0.0
-                    Home(viewModel = viewModel, locationState = lat to lon)
+                    Home(viewModel = viewModel, locationState = lat to lon,address)
                 }
 
                 composable("favorites") {
