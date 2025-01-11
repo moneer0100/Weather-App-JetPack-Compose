@@ -23,6 +23,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
+import com.example.weatherappjetpackconpose.viewModel.HomeViewModel
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
@@ -32,7 +33,14 @@ import kotlin.math.roundToInt
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
-fun ForecastWeather(forecast: Forecast,lat:Double,lon: Double) {
+fun ForecastWeather(forecast: Forecast,lat:Double,lon: Double,viewModel: HomeViewModel) {
+    val tempInKelvinMin = forecast.list[0].main.tempMin
+    val convertedTempMin = viewModel.convertTemperature(tempInKelvinMin)
+    val tempInKelvinMax=forecast.list[0].main.tempMax
+    val convertedTempMax = viewModel.convertTemperature(tempInKelvinMax)
+    val tempInKelven=forecast.list[0].main.temp
+    val convertedTemp=viewModel.convertTemperature(tempInKelven)
+
     Text(
         text = "Today's Forecast (Every 3 Hours)",
         style = MaterialTheme.typography.titleMedium,
@@ -81,7 +89,7 @@ fun ForecastWeather(forecast: Forecast,lat:Double,lon: Double) {
                         modifier = Modifier.size(50.dp)
                     )
                     Text(
-                        text = "$tempInCelsius°${TemperatureUnit.C}",
+                        text = "$convertedTemp°${viewModel.selectedTemperatureScale.value}",
                         style = MaterialTheme.typography.bodyLarge,
                         color = Color(0xFF0288D1)
                     )
@@ -107,8 +115,7 @@ fun ForecastWeather(forecast: Forecast,lat:Double,lon: Double) {
 
         groupedForecast.entries.take(5).forEach { (date, dailyForecasts) ->
             val dayOfWeek = date.dayOfWeek.name // Get the name of the week
-            val tempMaxInCelsius = dailyForecasts.maxOf {it.main.tempMax.roundToInt() }
-            val tempMinInCelsius = dailyForecasts.minOf { it.main.tempMin.roundToInt() }
+
             val iconCode = dailyForecasts.firstOrNull()?.weather?.firstOrNull()?.icon ?: ""
             val iconUrl = "https://openweathermap.org/img/wn/${iconCode}@2x.png"
 
@@ -138,7 +145,8 @@ fun ForecastWeather(forecast: Forecast,lat:Double,lon: Double) {
                         modifier = Modifier.size(50.dp)
                     )
                     Text(
-                        text = " $tempMaxInCelsius°${TemperatureUnit.C}/$tempMinInCelsius°${TemperatureUnit.C}",
+                        text = " $convertedTempMin°${viewModel.selectedTemperatureScale.value}" +
+                                "/$convertedTempMax°${viewModel.selectedTemperatureScale.value}",
                         style = MaterialTheme.typography.bodyMedium,
                         color = Color.Blue,
                         modifier = Modifier

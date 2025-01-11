@@ -25,10 +25,12 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
 import com.example.weatherappjetpackconpose.viewModel.HomeViewModel
 
 @RequiresApi(Build.VERSION_CODES.O)
@@ -66,25 +68,39 @@ fun WeatherNavigation(viewModel: HomeViewModel, locationState: Pair<Double, Doub
                 composable("home") {
                     Home(viewModel = viewModel, locationState = locationState)
                 }
+                composable(
+                    route = "home/{lat}/{lon}",
+                    arguments = listOf(
+                        navArgument("lat") { type = NavType.StringType },
+                        navArgument("lon") { type = NavType.StringType }
+                    )
+                ) { backStackEntry ->
+                    val lat = backStackEntry.arguments?.getString("lat")?.toDoubleOrNull() ?: 0.0
+                    val lon = backStackEntry.arguments?.getString("lon")?.toDoubleOrNull() ?: 0.0
+                    Home(viewModel = viewModel, locationState = lat to lon)
+                }
+
                 composable("favorites") {
-                    FavoritesScreen(navController,viewModel)  // Make sure this screen exists
+                    FavoritesScreen(navController=navController,viewModel=viewModel)
                 }
                 composable("alerts") {
-                    AlertsScreen()
+                    AlertsScreen(navController=navController,viewModel=viewModel)
                 }
                 composable("settings") {
-                    SettingsScreen()
+                    SettingsScreen(viewModel)
                 }
-                composable("map") {
+
+                composable("googleMapScreen/{sourceScreen}") { backStackEntry ->
+                    val sourceScreen = backStackEntry.arguments?.getString("sourceScreen") ?: "favScreen"
                     GoogleMapScreen(
-                        viewModel = viewModel,
                         navController = navController,
-                        onLocationSelected = { latLng ->
-                            navController.previousBackStackEntry?.savedStateHandle?.set("location", latLng)
-                            navController.popBackStack() // Return to the previous screen
-                        }
+                        viewModel = viewModel,
+                        onLocationSelected = { latLng ->  navController.previousBackStackEntry?.savedStateHandle?.set("location", latLng)
+                            navController.popBackStack() },
+                        sourceScreen = sourceScreen
                     )
                 }
+
             }
         }
     }
@@ -110,7 +126,7 @@ fun BottomNavigationBar(
                 onClick = {
                     if (currentDestination != item.route) {
                         navController.navigate(item.route) {
-                            // Avoid multiple copies of the same route on the back stack
+
                             launchSingleTop = true
                             restoreState = true
                         }

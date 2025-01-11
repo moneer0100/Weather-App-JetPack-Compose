@@ -50,7 +50,7 @@ fun Home(viewModel: HomeViewModel = viewModel(), locationState: Pair<Double, Dou
                             val weatherData = (currentForecast as ResponseState.Success<CurrentForcast>).data
                             WeatherContent(weatherData,
                                 lat = locationState.first,
-                                long = locationState.second)
+                                long = locationState.second,viewModel=viewModel)
                         }
                         is ResponseState.Error -> {
                             Text("Error loading current weather data", color = Color.Red, textAlign = TextAlign.Center)
@@ -68,7 +68,7 @@ fun Home(viewModel: HomeViewModel = viewModel(), locationState: Pair<Double, Dou
                             val forecast = (forecastWeather as ResponseState.Success<Forecast>).data
                             ForecastWeather(forecast,
                                 lat=locationState.first,
-                                lon=locationState.second)
+                                lon=locationState.second,viewModel=viewModel)
                         }
                         is ResponseState.Error -> {
                             Text("Error loading forecast data", color = Color.Red, textAlign = TextAlign.Center)

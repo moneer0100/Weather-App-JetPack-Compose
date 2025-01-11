@@ -30,7 +30,7 @@ class RepoWeatherImp @Inject constructor(
     ): Flow<Forecast> {
         return flowOf( weatherInterface.getWeatherForcast(lat,long,language,units))
     }
-
+        //Fav
     override fun getAllFav(): Flow<List<FavouriteWeather>> {
      return localWeatherInterface.getAllFav()
     }
@@ -41,5 +41,17 @@ class RepoWeatherImp @Inject constructor(
 
     override suspend fun deleteFromDataBase(favouriteWeather: FavouriteWeather) {
     return localWeatherInterface.deleteFromDataBase(favouriteWeather)
+    }
+    //Alert
+    override fun getAlert(): Flow<List<Alert>> {
+    return localWeatherInterface.getAlert()
+    }
+
+    override suspend fun insertAlert(alert: Alert) {
+        return localWeatherInterface.insertAlert(alert)
+    }
+
+    override suspend fun deleteAlert(alert: Alert) {
+        return localWeatherInterface.deleteAlert(alert)
     }
 }

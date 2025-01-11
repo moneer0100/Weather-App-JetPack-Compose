@@ -20,4 +20,8 @@ suspend fun getWeatherForecast(
 fun getAllFav():Flow<List<FavouriteWeather>>
 suspend fun insertToDataBase(favouriteWeather: FavouriteWeather)
 suspend fun deleteFromDataBase(favouriteWeather: FavouriteWeather)
+    //Alert
+    fun getAlert():Flow<List<Alert>>
+    suspend fun insertAlert(alert: Alert)
+    suspend fun deleteAlert(alert: Alert)
 }

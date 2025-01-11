@@ -3,6 +3,8 @@ package com.example.weatherappjetpackconpose.view
 import android.Manifest
 import android.annotation.SuppressLint
 import android.app.Activity
+import android.app.NotificationChannel
+import android.app.NotificationManager
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -38,6 +40,7 @@ import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.weatherappjetpackconpose.model.pojo.Coord
 import com.example.weatherappjetpackconpose.model.pojo.CurrentForcast
 import com.example.weatherappjetpackconpose.viewModel.HomeViewModel
 import com.google.android.gms.location.FusedLocationProviderClient
@@ -63,15 +66,19 @@ class MainActivity : ComponentActivity() {
     private var longitude: Double = 0.0
 
 
+
     @RequiresApi(Build.VERSION_CODES.O)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
         enableEdgeToEdge()
         fusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(this)
-
+        createNotificationChannel(this)
         setContent {
+
             val viewModel: HomeViewModel = hiltViewModel()
             val locationState = remember { mutableStateOf(Pair(0.0, 0.0)) }
+
 //            Home(viewModel, locationState = locationState.value)
             WeatherNavigation(viewModel,locationState=locationState.value)
             LaunchedEffect(Unit) {
@@ -114,7 +121,7 @@ class MainActivity : ComponentActivity() {
     private fun getFreshLocation(viewModel: HomeViewModel, locationState: MutableState<Pair<Double, Double>>) {
 
         val locationRequest = LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY, 5000) // تحديث كل 5 ثوانٍ
-            .setMinUpdateIntervalMillis(2000) 
+            .setMinUpdateIntervalMillis(2000)
             .setMaxUpdateDelayMillis(10000)
             .setWaitForAccurateLocation(true)
             .build()
@@ -174,6 +181,17 @@ class MainActivity : ComponentActivity() {
         } catch (e: Exception) {
             Log.e("GeocoderError", "Error fetching address: ${e.message}")
             "Unable to get address"
+        }
+    }
+    fun createNotificationChannel(context: Context) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val channel = NotificationChannel(
+                "weatherAppChannel",
+                "Weather App Notifications",
+                NotificationManager.IMPORTANCE_HIGH
+            )
+            val manager = context.getSystemService(NotificationManager::class.java)
+            manager.createNotificationChannel(channel)
         }
     }
 

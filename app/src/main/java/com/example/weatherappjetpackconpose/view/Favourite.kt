@@ -2,6 +2,7 @@ package com.example.weatherappjetpackconpose.view
 
 import android.widget.Toast
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -52,12 +53,15 @@ fun FavoritesScreen(navController: NavHostController, viewModel: HomeViewModel) 
                     .padding(16.dp)
             ) {
                 Column(modifier = Modifier.fillMaxSize()) {
-                    // Display the list of favorite weather locations
+
                     favoriteLocations.forEach { location ->
                         FavoriteCard(
                             favoriteWeather = location,
+                            onClick = {
+                                navController.navigate("home/${location.lat}/${location.lon}")
+                            },
                             onDelete = {
-                                // Delete the location from the database
+
                                 viewModel.deleteFromDataBase(location)
                                 Toast.makeText(navController.context, "Deleted ${location.address}", Toast.LENGTH_SHORT).show()
                             }
@@ -66,7 +70,7 @@ fun FavoritesScreen(navController: NavHostController, viewModel: HomeViewModel) 
 
                     Spacer(modifier = Modifier.weight(1f))
 
-                    Button(onClick = { navController.navigate("map") }, modifier = Modifier.align(Alignment.CenterHorizontally)) {
+                    Button(onClick = { navController.navigate("googleMapScreen/favScreen") }, modifier = Modifier.align(Alignment.CenterHorizontally)) {
                         Text(text = "Go To Map")
                     }
                 }
@@ -76,11 +80,11 @@ fun FavoritesScreen(navController: NavHostController, viewModel: HomeViewModel) 
 }
 
 @Composable
-fun FavoriteCard(favoriteWeather: FavouriteWeather, onDelete: () -> Unit) {
+fun FavoriteCard(favoriteWeather: FavouriteWeather,onClick:()->Unit, onDelete: () -> Unit) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 8.dp),
+            .padding(vertical = 8.dp).clickable { onClick() },
         shape = RoundedCornerShape(8.dp)
     ) {
         Row(
@@ -97,10 +101,12 @@ fun FavoriteCard(favoriteWeather: FavouriteWeather, onDelete: () -> Unit) {
                     overflow = TextOverflow.Ellipsis
                 )
                 Text(
-                    text = "Lat: ${favoriteWeather.lat}, Lon: ${favoriteWeather.lon}",
+                    text =" ${favoriteWeather.lat},${favoriteWeather.lon}",
                     style = androidx.compose.material3.MaterialTheme.typography.bodyMedium,
                     color = Color.Gray
                 )
+                Text(text = "")
+
             }
 
             IconButton(onClick = onDelete) {
