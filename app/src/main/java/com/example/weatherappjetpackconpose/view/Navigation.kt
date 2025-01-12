@@ -91,15 +91,30 @@ fun WeatherNavigation(viewModel: HomeViewModel, locationState: Pair<Double, Doub
                 }
 
                 composable("googleMapScreen/{sourceScreen}") { backStackEntry ->
-                    val sourceScreen = backStackEntry.arguments?.getString("sourceScreen") ?: "favScreen"
+                    val sourceScreen = backStackEntry.arguments?.getString("sourceScreen") ?: "favorites"
                     GoogleMapScreen(
                         navController = navController,
                         viewModel = viewModel,
-                        onLocationSelected = { latLng ->  navController.previousBackStackEntry?.savedStateHandle?.set("location", latLng)
-                            navController.popBackStack() },
+                        onLocationSelected = { latLng ->
+                            // حفظ الموقع الذي تم اختياره
+                            navController.previousBackStackEntry?.savedStateHandle?.set("location", latLng)
+                            // التنقل إلى الشاشة المناسبة
+                            when (sourceScreen) {
+                                "favorites" -> navController.navigate("favorites") {
+                                    launchSingleTop = true
+                                    restoreState = true
+                                }
+                                "alerts" -> navController.navigate("alerts") {
+                                    launchSingleTop = true
+                                    restoreState = true
+                                }
+                                else -> navController.popBackStack() // العودة في حالة عدم تحديد وجهة
+                            }
+                        },
                         sourceScreen = sourceScreen
                     )
                 }
+
 
             }
         }

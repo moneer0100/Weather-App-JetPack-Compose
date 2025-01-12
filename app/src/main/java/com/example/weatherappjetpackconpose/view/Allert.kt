@@ -76,7 +76,7 @@ fun AlertsScreen(navController: NavHostController, viewModel: HomeViewModel) {
 
                     Spacer(modifier = Modifier.weight(1f))
 
-                    Button(onClick = { navController.navigate("googleMapScreen/favScreen") }, modifier = Modifier.align(Alignment.CenterHorizontally)) {
+                    Button(onClick = { navController.navigate("googleMapScreen/alerts") }, modifier = Modifier.align(Alignment.CenterHorizontally)) {
                         Text(text = "Go To Map")
                     }
                 }
@@ -109,12 +109,15 @@ fun AlertCard(alert: Alert, currentForecast: CurrentForcast?, onClick: () -> Uni
                 )
                 Text(
                     text = "${alert.lat},${alert.lon}",
-                    style = androidx.compose.material3.MaterialTheme.typography.bodyMedium,
+                    style = MaterialTheme.typography.bodyMedium,
                     color = Color.Gray
                 )
+               Text(text =" ${alert.start}",
+                style = MaterialTheme.typography.bodyMedium,
+                color = Color.Gray)
                 currentForecast?.weather?.get(0)?.let {
                     Text(text = it.description,
-                        style = androidx.compose.material3.MaterialTheme.typography.bodyMedium,
+                        style = MaterialTheme.typography.bodyMedium,
                         color = Color.Gray)
                 }
 

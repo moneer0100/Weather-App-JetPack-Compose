@@ -76,7 +76,7 @@ fun FavoritesScreen(navController: NavHostController, viewModel: HomeViewModel) 
 
                     Spacer(modifier = Modifier.weight(1f))
 
-                    Button(onClick = { navController.navigate("googleMapScreen/favScreen") }, modifier = Modifier.align(Alignment.CenterHorizontally)) {
+                    Button(onClick = { navController.navigate("googleMapScreen/favorites") }, modifier = Modifier.align(Alignment.CenterHorizontally)) {
                         Text(text = "Go To Map")
                     }
                 }

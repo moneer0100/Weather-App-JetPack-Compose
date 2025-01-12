@@ -9,17 +9,15 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.location.Geocoder
-import android.os.SystemClock
 import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.background
+import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.view.ContextThemeWrapper
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
@@ -29,19 +27,20 @@ import com.example.weatherappjetpackconpose.model.pojo.FavouriteWeather
 import com.example.weatherappjetpackconpose.viewModel.HomeViewModel
 import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.maps.android.compose.*
 import java.util.*
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun GoogleMapScreen(
     navController: NavHostController,
     viewModel: HomeViewModel,
     onLocationSelected: (LatLng) -> Unit,
-    sourceScreen: String,
-
+    sourceScreen: String
 ) {
     var alarmCalendar by remember { mutableStateOf<Calendar?>(null) }
-    var selectedDate by remember { mutableStateOf(Calendar.getInstance()) }
+    var showDatePicker by remember { mutableStateOf(false) }
     var showTimePicker by remember { mutableStateOf(false) }
     val context = LocalContext.current
 
@@ -55,9 +54,7 @@ fun GoogleMapScreen(
 
     val launcher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestPermission()
-    ) { isGranted ->
-        hasLocationPermission = isGranted
-    }
+    ) { isGranted -> hasLocationPermission = isGranted }
 
     if (!hasLocationPermission) {
         LaunchedEffect(Unit) {
@@ -72,38 +69,41 @@ fun GoogleMapScreen(
         bottomBar = {
             Button(
                 onClick = {
-                    selectedLocation?.let {location->
+                    selectedLocation?.let { location ->
                         val address = getAddressFromLatLng(context, location)
-                        if (sourceScreen == "alertsScreen") {
+                        if (sourceScreen == "alerts") {
                             showDialog = true
-
-                        } else if (sourceScreen == "favScreen") {
-
-
+                            // هنا تقدر تفتح الـ TimePicker عند اختيار المكان
+                            alarmCalendar = Calendar.getInstance()
+                            showTimePicker = true
+                            showDatePicker = true
+                        } else if (sourceScreen == "favorites") {
                             address?.let {
-                                FavouriteWeather(
-                                    id=0,
+                                val favourite = FavouriteWeather(
+                                    id = 0,
                                     address = it,
-                                    lat = selectedLocation!!.latitude,
-                                    lon = selectedLocation!!.longitude
-
-
+                                    lat = location.latitude,
+                                    lon = location.longitude
                                 )
-                            }?.let { viewModel.insertToDataBase(weather = it) }
-                            address.let {
-                                Alert( id=0
-                                    ,  lat = selectedLocation!!.latitude,
-                                    lon = selectedLocation!!.longitude,
-                                    Kind = "Alarm",
-                                    start =  0.0,
-                                    end = 0.0)
-                            }?.let {   viewModel.insertAlert(alert = it) }
+                                viewModel.insertToDataBase(favourite)
 
+                                val alert = alarmCalendar?.timeInMillis?.let { it1 ->
+                                    Alert(
+                                        id = 0,
+                                        lat = location.latitude,
+                                        lon = location.longitude,
+                                        Kind = "Alarm",
+                                        start = it1.toDouble(),
+                                        end = 0.0
+                                    )
+                                }
+                                if (alert != null) {
+                                    viewModel.insertAlert(alert)
+                                }
+                            }
                             onLocationSelected(location)
-
-                            navController.navigate("favorites") // Navigate to favorites after adding location
+                            navController.navigate("favorites")
                         } else {
-
                             onLocationSelected(location)
                             when (sourceScreen) {
                                 "AlertScreen" -> navController.navigate("alerts")
@@ -130,9 +130,7 @@ fun GoogleMapScreen(
             cameraPositionState = cameraPositionState,
             uiSettings = MapUiSettings(zoomControlsEnabled = true),
             properties = MapProperties(isMyLocationEnabled = hasLocationPermission),
-            onMapClick = { latLng -> selectedLocation = latLng
-
-              }
+            onMapClick = { latLng -> selectedLocation = latLng }
         ) {
             selectedLocation?.let {
                 Marker(
@@ -141,90 +139,83 @@ fun GoogleMapScreen(
                 )
             }
         }
-
-
-        if (showDialog) {
-            AlertDialog(
-                onDismissRequest = { showDialog = false },
-                confirmButton = {
-                    Button(
-                        onClick = {
-                            selectedLocation?.let {
-                                onLocationSelected(it)
-                                navController.navigate("alerts")
-
-                                // Show DatePickerDialog when the user confirms the location
-                                showTimePicker = true
-                                showDialog = false
-                            }
-                        }
-                    ) {
-                        Text("Yes")
-                    }
-                },
-                dismissButton = {
-                    Button(onClick = { showDialog = false }) {
-                        Text("Cancel")
-                    }
-                },
-                title = { Text("Confirm Location") },
-                text = { Text("Do you want to set an alarm for this location?") }
-            )
-        }
-
-        if (showTimePicker) {
+        if (showDatePicker) {
             android.app.DatePickerDialog(
                 context,
                 { _, year, month, dayOfMonth ->
-                    selectedDate = Calendar.getInstance().apply {
-                        set(year, month, dayOfMonth)
+                    alarmCalendar?.apply {
+                        set(Calendar.YEAR, year)
+                        set(Calendar.MONTH, month)
+                        set(Calendar.DAY_OF_MONTH, dayOfMonth)
                     }
-
-                    TimePickerDialog(
-                        context,
-                        { _, hourOfDay, minute ->
-                            // Adjust hour for AM/PM format
-                            val isPM = hourOfDay >= 12
-                            val hourIn12Format = if (isPM) hourOfDay - 12 else hourOfDay
-                            val calendar = Calendar.getInstance()
-                            calendar.set(Calendar.HOUR_OF_DAY, hourIn12Format)
-                            calendar.set(Calendar.MINUTE, minute)
-                            calendar.set(Calendar.SECOND, 0)
-                            alarmCalendar = calendar // Save the selected time
-                            // Call the function to set the alarm
-                            alarmCalendar?.let {
-                                setAlarm(context, selectedLocation, it)
-                                selectedLocation?.let { location ->
-                                    viewModel.insertAlert(
-                                        alert = Alert(
-                                            id = 0,
-                                            lon = location.longitude,
-                                            lat = location.latitude,
-                                            start = it.timeInMillis.toDouble(),
-                                            end = 0.0,
-                                            Kind = "Alarm"
-                                        )
-                                    )
-                                }
-                            }
-                        },
-                        selectedDate.get(Calendar.HOUR),
-                        selectedDate.get(Calendar.MINUTE),
-                        false // false for 12-hour format (true is for 24-hour format)
-                    ).show()
-
+                    showDatePicker = false
+                    showTimePicker = true // Open TimePicker after selecting date
                 },
-                selectedDate.get(Calendar.YEAR),
-                selectedDate.get(Calendar.MONTH),
-                selectedDate.get(Calendar.DAY_OF_MONTH)
+                alarmCalendar?.get(Calendar.YEAR) ?: Calendar.getInstance().get(Calendar.YEAR),
+                alarmCalendar?.get(Calendar.MONTH) ?: Calendar.getInstance().get(Calendar.MONTH),
+                alarmCalendar?.get(Calendar.DAY_OF_MONTH) ?: Calendar.getInstance()
+                    .get(Calendar.DAY_OF_MONTH)
             ).show()
         }
+        // Time Picker Dialog to select time
+        if (showTimePicker) {
+            LaunchedEffect(showTimePicker) {
+                TimePickerDialog(
+                    context,
+                    { _, hourOfDay, minute ->
+                        alarmCalendar?.apply {
+                            set(Calendar.HOUR_OF_DAY, hourOfDay)
+                            set(Calendar.MINUTE, minute)
+                            set(Calendar.SECOND, 0)
+                        }
+                        showTimePicker = false
+
+                        // Confirm Alarm Dialog
+                        alarmCalendar?.let {
+                            val formattedTime = String.format(
+                                Locale.getDefault(),
+                                "%02d:%02d %s",
+                                if (hourOfDay > 12) hourOfDay - 12 else hourOfDay,
+                                minute,
+                                if (hourOfDay >= 12) "PM" else "AM"
+                            )
+                            MaterialAlertDialogBuilder(context)
+                                .setTitle("Confirm Alarm")
+                                .setMessage("Alarm set for: $formattedTime")
+                                .setPositiveButton("Confirm") { _, _ ->
+                                    // حفظ التنبيه في قاعدة البيانات
+                                    alarmCalendar?.let { calendar ->
+                                        val alert = Alert(
+                                            id = 0,
+                                            lat = selectedLocation?.latitude ?: 0.0,
+                                            lon = selectedLocation?.longitude ?: 0.0,
+                                            Kind = "Alarm",
+                                            start = calendar.timeInMillis.toDouble(),
+                                            end = 0.0
+                                        )
+                                        viewModel.insertAlert(alert)
+
+                                        // بعد حفظ التنبيه، انتقل إلى صفحة المنبه
+                                        navController.navigate("alerts")
+                                    }
+                                }
+                                .setNegativeButton("Cancel", null)
+                                .show()
+                        }
+                    },
+                    alarmCalendar?.get(Calendar.HOUR_OF_DAY) ?: Calendar.getInstance().get(Calendar.HOUR_OF_DAY),
+                    alarmCalendar?.get(Calendar.MINUTE) ?: Calendar.getInstance().get(Calendar.MINUTE),
+                    false
+                ).show()
+            }
+        }
+
     }
 }
 
 
 @SuppressLint("ScheduleExactAlarm")
-fun setAlarm(context: Context, location: LatLng?, alarmCalendar: Calendar) {
+fun setAlarm(context: Context, location: LatLng?, alarmCalendar: Calendar, viewModel: HomeViewModel) {
     val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
 
     if (location == null) return
@@ -241,18 +232,19 @@ fun setAlarm(context: Context, location: LatLng?, alarmCalendar: Calendar) {
         PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
     )
 
-    // Schedule alarm for the selected time
+    // Set the alarm
     alarmManager.setExact(AlarmManager.RTC_WAKEUP, alarmCalendar.timeInMillis, pendingIntent)
     Log.d("Alarm", "Alarm set for: ${alarmCalendar.timeInMillis}")
+
 }
+
 fun getAddressFromLatLng(context: Context, latLng: LatLng): String? {
     val geocoder = Geocoder(context, Locale.getDefault())
     return try {
         val addresses = geocoder.getFromLocation(latLng.latitude, latLng.longitude, 1)
-        addresses?.firstOrNull()?.getAddressLine(0) // استخدام أول عنوان تم العثور عليه
+        addresses?.firstOrNull()?.getAddressLine(0)
     } catch (e: Exception) {
         e.printStackTrace()
         null
     }
 }
-
